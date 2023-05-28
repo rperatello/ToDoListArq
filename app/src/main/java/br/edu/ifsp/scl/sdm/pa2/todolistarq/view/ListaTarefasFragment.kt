@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.commit
 import androidx.fragment.app.setFragmentResultListener
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import br.edu.ifsp.scl.sdm.pa2.todolistarq.R
 import br.edu.ifsp.scl.sdm.pa2.todolistarq.controller.ListaTarefasController
@@ -18,22 +19,25 @@ import br.edu.ifsp.scl.sdm.pa2.todolistarq.view.BaseFragment.Constantes.TAREFA_E
 import br.edu.ifsp.scl.sdm.pa2.todolistarq.view.BaseFragment.Constantes.TAREFA_REQUEST_KEY
 import br.edu.ifsp.scl.sdm.pa2.todolistarq.view.adapter.OnTarefaClickListener
 import br.edu.ifsp.scl.sdm.pa2.todolistarq.view.adapter.TarefasAdapter
+import br.edu.ifsp.scl.sdm.pa2.todolistarq.viewmodel.TarefaViewModel
 
 class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
     private lateinit var fragmentListaTarefasBinding: FragmentListaTarefasBinding
     private lateinit var tarefasList: MutableList<Tarefa>
     private lateinit var tarefasAdapter: TarefasAdapter
-    private lateinit var listaTarefasController: ListaTarefasController
+    //private lateinit var listaTarefasController: ListaTarefasController
+    //private lateinit var listaTarefasController: TarefaPresenter
+    private lateinit var tarefaViewModel: TarefaViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Instanciando controller
-        listaTarefasController = ListaTarefasController(this)
 
-        tarefasList = mutableListOf()
+        //tarefaViewModel = TarefaPresenter(this)
+        tarefaViewModel = ViewModelProvider(this).get(TarefaViewModel::class.java)
 
-        //Observar view Model
-        listaTarefasController.buscarTarefas()
+        tarefaViewModel.recuperarListaTarefas().observe(this){ listaTarefas ->
+            atualizarListaTarefas(listaTarefas)
+        }
 
         setFragmentResultListener(TAREFA_REQUEST_KEY) { chave, resultados ->
             val tarefaExtra = resultados.getParcelable<Tarefa>(TAREFA_EXTRA)
@@ -62,10 +66,13 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
         fragmentListaTarefasBinding = FragmentListaTarefasBinding.inflate(inflater, container, false)
 
         // Buscar tarefas no banco de dados
+        tarefasList = mutableListOf()
         tarefasAdapter = TarefasAdapter(this, tarefasList)
         val tarefasLayoutManager = LinearLayoutManager(activity)
         fragmentListaTarefasBinding.tarefasRv.adapter = tarefasAdapter
         fragmentListaTarefasBinding.tarefasRv.layoutManager = tarefasLayoutManager
+
+        tarefaViewModel.buscarTarefas()
 
         return fragmentListaTarefasBinding.root
     }
@@ -80,16 +87,13 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
         val posicao = tarefasAdapter.posicao
         return when (item.itemId) {
             R.id.editarTarefaMi -> {
-                // Abre TarefaFragment para edição de tarefa
                 abreTarefaFragment(tarefasList[posicao], false)
                 true
             }
             R.id.removerTarefaMi -> {
-
-                listaTarefasController.removerTarefa(tarefasList[posicao])
-
-                // Remove da lista de tarefas
-                listaTarefasController.removerTarefa(tarefasList[posicao])
+                tarefaViewModel.removerTarefa(tarefasList[posicao])
+                tarefasList.removeAt(posicao)
+                tarefasAdapter.notifyDataSetChanged()
                 true
             }
             else -> false
@@ -114,7 +118,7 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
         }
     }
 
-    fun atualizarListaTarefas(listaTarefas: MutableList<Tarefa>) {
+    override fun atualizarListaTarefas(listaTarefas: MutableList<Tarefa>) {
         tarefasList.clear()
         tarefasList.addAll(listaTarefas)
         tarefasAdapter.notifyDataSetChanged()

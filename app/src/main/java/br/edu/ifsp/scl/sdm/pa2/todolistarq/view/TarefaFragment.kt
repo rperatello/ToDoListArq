@@ -97,7 +97,7 @@ class TarefaFragment : BaseFragment() {
         fab?.visibility = View.VISIBLE
     }
 
-    fun retornaTarefa(tarefa: Tarefa) {
+    override fun retornaTarefa(tarefa: Tarefa) {
         setFragmentResult(TAREFA_REQUEST_KEY, Bundle().also {
             it.putParcelable(TAREFA_EXTRA, tarefa)
         })
