@@ -1,5 +1,9 @@
 package br.edu.ifsp.scl.sdm.pa2.todolistarq.view
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -28,6 +32,11 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
     //private lateinit var listaTarefasController: ListaTarefasController
     //private lateinit var listaTarefasController: TarefaPresenter
     private lateinit var tarefaViewModel: TarefaViewModel
+
+    companion object {
+        val ACTION_BUSCAR = "ACTION_BUSCAR"
+        val EXTRA_BUSCAR = "BUSCAR"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,7 +110,6 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
     }
 
     private fun abreTarefaFragment(tarefa: Tarefa, consulta: Boolean) {
-        // Preparando tarefa para enviar para o TarefaFragment
         val argumentos = Bundle().also { bundle ->
             bundle.putParcelable(TAREFA_EXTRA, tarefa)
             if (consulta) {
@@ -116,6 +124,28 @@ class ListaTarefasFragment: BaseFragment(), OnTarefaClickListener {
             addToBackStack("TarefaFragment")
             replace(R.id.principalFcv, tarefaFragment)
         }
+    }
+
+    private val receiveBuscarTarefasBr: BroadcastReceiver by lazy {
+        object: BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val bundle = intent?.extras
+                val lista = bundle?.getParcelableArray(EXTRA_BUSCAR)
+                val listaTarefas: MutableList<Tarefa> = mutableListOf()
+                lista?.forEach { item ->
+                    listaTarefas.add(item as Tarefa)
+                }
+
+                atualizarListaTarefas(listaTarefas)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        requireActivity().registerReceiver(receiveBuscarTarefasBr, IntentFilter(
+            ACTION_BUSCAR)
+        )
     }
 
     override fun atualizarListaTarefas(listaTarefas: MutableList<Tarefa>) {

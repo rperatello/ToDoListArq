@@ -1,5 +1,9 @@
 package br.edu.ifsp.scl.sdm.pa2.todolistarq.view
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -26,6 +30,16 @@ class TarefaFragment : BaseFragment() {
     private lateinit var tarefaController: TarefaController
 
     private var fab: FloatingActionButton? = null
+
+    companion object {
+        val ACTION_ATUALIZAR = "ACTION_ATUALIZAR"
+        val ACTION_INSERIR = "ACTION_INSERIR"
+
+        val EXTRA_ATUALIZAR = "ATUALIZAR"
+        val EXTRA_INSERIR = "INSERIR"
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -102,5 +116,36 @@ class TarefaFragment : BaseFragment() {
             it.putParcelable(TAREFA_EXTRA, tarefa)
         })
         activity?.supportFragmentManager?.popBackStack()
+    }
+
+    private val receiveInserirTarefasBr: BroadcastReceiver by lazy {
+        object: BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val bundle = intent?.extras
+                val tarefa = bundle?.getParcelable<Tarefa>(EXTRA_INSERIR)
+                retornaTarefa(tarefa!!)
+            }
+        }
+    }
+
+    private val receiveAtualizarTarefasBr: BroadcastReceiver by lazy {
+        object: BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val bundle = intent?.extras
+                val tarefa = bundle?.getParcelable<Tarefa>(EXTRA_ATUALIZAR)
+                retornaTarefa(tarefa!!)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        requireActivity().registerReceiver(receiveInserirTarefasBr, IntentFilter(
+            ACTION_INSERIR)
+        )
+
+        requireActivity().registerReceiver(receiveAtualizarTarefasBr, IntentFilter(
+            ACTION_ATUALIZAR)
+        )
     }
 }
